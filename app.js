@@ -468,6 +468,7 @@ $("#play-button").addEventListener("click", () => {
 });
 $("#add-person-button").addEventListener("click", () => {
   const person = createPedestrian(state);
+  if (!person) return showStatus("No unoccupied walkable starting point is available.");
   selectedId = person.id;
   refreshPeople();
   updateUI();

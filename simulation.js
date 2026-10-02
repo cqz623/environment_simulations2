@@ -147,14 +147,38 @@ export function selectDestination(state, pedestrianId, destinationId) {
 
 export function createPedestrian(state, nodeId) {
   const choices = ["A", "B", "E", "F", "H", "D"];
-  const spawnNode = NODES[nodeId] ? nodeId : choices[(state.nextPedestrian - 1) % choices.length];
+  const preferred = NODES[nodeId] ? nodeId : choices[(state.nextPedestrian - 1) % choices.length];
+  const nodeOrder = [preferred, ...Object.keys(NODES).filter((id) => id !== preferred)];
+  let spawn = null;
+  for (const id of nodeOrder) {
+    const candidates = [{ ...NODES[id] }];
+    for (const [a, b] of EDGES) {
+      const other = a === id ? b : b === id ? a : null;
+      if (!other || !segmentIsOpen(NODES[id], NODES[other], state.obstacles)) continue;
+      for (const fraction of [0.18, 0.36, 0.56]) {
+        candidates.push({
+          x: NODES[id].x + (NODES[other].x - NODES[id].x) * fraction,
+          z: NODES[id].z + (NODES[other].z - NODES[id].z) * fraction
+        });
+      }
+    }
+    const position = candidates.find((candidate) =>
+      segmentIsOpen(candidate, NODES[id], state.obstacles) &&
+      state.pedestrians.every((person) => distance(person.position, candidate) > 0.7)
+    );
+    if (position) {
+      spawn = { node: id, position };
+      break;
+    }
+  }
+  if (!spawn) return null;
   const pedestrian = {
     id: "P" + String(state.nextPedestrian++).padStart(2, "0"),
-    position: { ...NODES[spawnNode] },
+    position: spawn.position,
     speed: 0.85 + ((state.nextPedestrian * 7) % 7) * 0.085,
     destinationId: null,
     state: "idle",
-    anchorNode: spawnNode,
+    anchorNode: spawn.node,
     targetNode: null,
     queue: []
   };
