@@ -53,9 +53,10 @@ input[type=range] { width: 100%; margin: 13px 0 0; accent-color: #b87556; cursor
 .status-icon { flex: none; font-size: 16px; line-height: 1; }
 .insight { right: 25px; padding: 24px 22px 22px; color: #f3f1e7; background: rgba(19, 44, 42, .97); border: 1px solid #29504b; }
 .insight-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: -9px 0 23px; padding: 3px; background: #0d2422; border: 1px solid #35554e; }
-.insight-tab { min-height: 32px; border: 0; background: transparent; color: #8ba89a; font: 700 10px "Space Grotesk", sans-serif; letter-spacing: .11em; }
+.insight-tab { min-width: 0; min-height: 32px; border: 0; background: transparent; color: #8ba89a; font: 700 10px "Space Grotesk", sans-serif; letter-spacing: .11em; white-space: nowrap; }
 .insight-tab.active { background: #41645a; color: #fff9ec; }
 .insight-tab:hover { color: #fff9ec; }
+.insight-tab:focus-visible { outline: 2px solid #fff9ec; outline-offset: 2px; }
 .insight [hidden] { display: none !important; }
 .insight-head, .obstacle-heading { display: flex; align-items: center; justify-content: space-between; font: 700 10px "Space Grotesk", sans-serif; letter-spacing: .12em; }
 .insight-index, .obstacle-heading span:last-child { color: #91aa9e; font-size: 9px; }
@@ -114,6 +115,7 @@ input[type=range] { width: 100%; margin: 13px 0 0; accent-color: #b87556; cursor
 .location-axis span { padding: 5px; color: #f3e4cb; background: #31514b; letter-spacing: 0; }
 .location-axis span:first-child { margin-left: auto; }
 .location-section-title { display: flex; align-items: center; gap: 8px; margin: 20px 0 11px; color: #f4f0e5; font: 700 10px "Space Grotesk", sans-serif; letter-spacing: .06em; }
+.location-section-title.first { margin-top: 0; }
 .location-section-title span { width: 21px; height: 21px; display: grid; place-items: center; background: #ba785a; color: #fff; font-size: 9px; }
 .location-label { display: block; margin-bottom: 7px; color: #9db9aa; font-size: 10px; font-weight: 700; }
 .location-select, .description-form input, .coordinate-form input { min-width: 0; width: 100%; height: 34px; padding: 0 9px; border: 1px solid #54736a; border-radius: 0; outline: none; background: #1e3935; color: #f7f3e8; font: 500 11px "DM Sans", sans-serif; }
@@ -142,6 +144,11 @@ input[type=range] { width: 100%; margin: 13px 0 0; accent-color: #b87556; cursor
 .example-queries { display: flex; flex-wrap: wrap; gap: 5px; margin: 9px 0 0; }
 .example-queries button { padding: 5px 6px; border: 1px solid #59746b; background: transparent; color: #b9cbbd; font-size: 9px; }
 .example-queries button:hover { border-color: #c27c59; color: #fff; }
+@media (max-height: 600px) and (min-width: 741px) {
+  .panel { top: 80px; bottom: 20px; }
+  .insight { padding-top: 14px; }
+  .insight-tabs { margin-bottom: 12px; }
+}
 @media (max-width: 1100px) {
   .panel { width: 270px; }
   .introduction { left: 14px; }

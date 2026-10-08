@@ -13,7 +13,7 @@ An interactive 3D public plaza occupancy and wayfinding simulation based on [sem
 
 ## Explore location
 
-Open the **Location** tab in the right panel. The selected pedestrian is shown in two forms: exact `(x, z)` meters and a human-readable place description. The panel also shows where that world point appears on screen in pixels.
+The **Location** tab opens by default in the right panel. The selected pedestrian is shown in two forms: exact `(x, z)` meters and a human-readable place description. The panel also shows where that world point appears on screen in pixels. Use **Simulation** to return to occupancy, destinations, and obstacle details.
 
 - Select a pedestrian to answer **Object → Location**.
 - Choose a landmark to read the pedestrian's distance and direction relative to it.

@@ -4,8 +4,8 @@ import {
   BOUNDS, NODES, EDGES, DESTINATIONS, blockedEdges,
   createInitialState, createPedestrian, selectDestination,
   addObstacle, removeObstacle, tick
-} from "./simulation.js";
-import { landmarksFor, occupantsAt, relativeLocation, resolveDescription, semanticLocation } from "./location.js";
+} from "./simulation.js?v=20261008-location2";
+import { landmarksFor, occupantsAt, relativeLocation, resolveDescription, semanticLocation } from "./location.js?v=20261008-location2";
 
 const $ = (selector) => document.querySelector(selector);
 const host = $("#canvas-host");
@@ -20,7 +20,7 @@ let pointerStart = null;
 let inspectedPoint = null;
 let resolvedPoint = null;
 let resolvedRule = "";
-let activeTab = "simulation";
+let activeTab = "location";
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#dce1dd");
