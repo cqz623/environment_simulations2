@@ -1,4 +1,4 @@
-# Public Plaza Occupancy & Wayfinding Simulation
+# Times Square Pedestrian Occupancy & Wayfinding Simulation
 
 Create a single-page web application that visualizes the semantic model described below, given its entities, attributes, and associated rules. Render a demonstrative example of this semantic model and give interactive means (a toolbar with buttons) to manipulate it according to the actions and rules given.
 
@@ -7,14 +7,14 @@ Create a single-page web application that visualizes the semantic model describe
 - Make this project a simple single-page web application.
 - Use vanilla JavaScript.
 - The primary view should be a Three.js rendered view that fills the browser window.
-- Show a public plaza in 3D with moving pedestrians, visible destinations, paths, and obstacles. Provide a compact overlay for simulation controls and live occupancy and wayfinding statistics.
+- Show a stylized Times Square pedestrian plaza in New York City in 3D with moving pedestrians, visible destinations, paths, and obstacles. Provide a compact overlay for simulation controls and live occupancy and wayfinding statistics.
 - Include a Location panel that expresses positions as coordinates and human-readable spatial descriptions, and supports the four spatial queries below.
 
 ## Context
 
 This application simulates how pedestrians occupy and move through an urban public plaza. Each pedestrian starts at a valid position, chooses a destination, follows a walkable route, avoids obstacles, and stops upon arrival. The simulation should make changes in movement and occupancy visible when destinations fill up or obstacles block a path.
 
-Use a bounded, ground-level plaza as the demonstrative example. Represent horizontal positions as `(x, z)` coordinates in the plaza, with dimensions and movement distances measured in meters. Example destinations can include an entrance, a bench area, a café, and a shaded area. Paths represent the walkable network between these places; obstacles can be permanent features or temporary barriers.
+Use a bounded, ground-level, stylized Times Square plaza as the demonstrative example. This is a conceptual teaching model rather than a survey-accurate map. Represent horizontal positions as local `(x, z)` coordinates in meters; they are not GPS coordinates. Example destinations include a Broadway gateway, plaza seating, TKTS red steps, and a food kiosk. Paths represent the walkable network between these places; obstacles can be permanent features or temporary barriers.
 
 ## Entities
 
@@ -39,7 +39,7 @@ Describe each entity with the following parameters:
   - `route`: ordered Path segments or waypoints toward the destination.
 - **Destination**
   - `id` and `name`: unique identifier and display label.
-  - `type`: `entrance`, `bench`, `café`, or `shaded area`.
+  - `type`: `pedestrian entrance`, `tables & chairs`, `viewing steps`, or `street kiosk`.
   - `position`: `(x, z)` coordinates of its accessible arrival point.
   - `capacity`: maximum number of pedestrians it can hold at once.
   - `occupancy`: number of pedestrians currently at the destination.
@@ -50,7 +50,7 @@ Describe each entity with the following parameters:
   - `status`: `open` or `blocked`.
 - **Obstacle**
   - `id`: unique identifier.
-  - `type`: `building`, `planter`, `fountain`, or `temporary barrier`.
+  - `type`: `subway entrance`, `planter`, `public tables`, or `temporary barrier`.
   - `position`: `(x, z)` location.
   - `boundary`: footprint that cannot be entered.
 - **Public Space**
@@ -89,7 +89,7 @@ Describe each entity with the following parameters:
 ## Location System
 
 - **Computational location:** Every ground-level position is an `(x, z)` pair in meters within the plaza boundary. The plaza center is `(0, 0)`; positive `x` points east and negative `z` points north. Project a world position through the active Three.js camera to display its screen-pixel coordinates. Clicking the scene performs the inverse ray-to-ground-plane mapping.
-- **Human-readable location:** Describe a position using named landmarks and spatial relations, for example `Near the fountain`, `North of the entrance`, or `Between the fountain and bench garden`. The initial fountain is an obstacle and landmark; the four destinations are also landmarks.
+- **Human-readable location:** Describe a position using Times Square landmarks and spatial relations, for example `Near the red steps`, `North of the Broadway gateway`, or `Between the red steps and plaza seating`. The subway entrance and public tables are obstacles and landmarks; the four destinations are also landmarks.
 - **Object → Location:** Selecting a pedestrian reveals its current world coordinates, screen coordinates, and semantic location. These values update as the pedestrian moves or the camera changes.
 - **Location → Occupant:** Clicking a plaza point or entering `(x, z)` reports the pedestrians, destinations, obstacles, and paths whose footprints contain that point. If nothing is present, report open plaza; distinguish locations outside the boundary.
 - **Reference Frame → Occupant:** Choose a landmark as a reference frame and report the selected pedestrian's distance, compass direction, and east/north offsets relative to it.

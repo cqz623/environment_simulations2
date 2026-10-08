@@ -1,6 +1,8 @@
 # Common Ground
 
-An interactive 3D public plaza occupancy and wayfinding simulation based on [semantic-model.md](./semantic-model.md).
+An interactive 3D pedestrian occupancy and wayfinding simulation set in a **stylized Times Square, New York City** scene, based on [semantic-model.md](./semantic-model.md). Its local coordinates and compact plaza layout are a teaching model, not a survey-accurate map or GPS system.
+
+The scene draws on the [NYC Times Square pedestrian plaza description](https://www.nyc.gov/site/cecm/permitting/times-square.page) and the [Times Square Alliance's TKTS red steps location](https://www.timessquarenyc.org/entertainment/tkts-times-square). All 3D geometry and billboard graphics are generated in code.
 
 ## Explore the simulation
 
@@ -18,9 +20,9 @@ The **Location** tab opens by default in the right panel. The selected pedestria
 - Select a pedestrian to answer **Object → Location**.
 - Choose a landmark to read the pedestrian's distance and direction relative to it.
 - Click **Inspect a point on the map**, then click the plaza, or enter coordinates to answer **Location → Occupant**.
-- Enter `Near the fountain`, `North of the entrance`, `Beside the café`, or `Between the fountain and bench garden` to turn a description into a highlighted walkable point.
+- Enter `Near the red steps`, `North of the Broadway gateway`, `Beside the food kiosk`, or `Between the red steps and plaza seating` to turn a description into a highlighted walkable point.
 
-The coordinate frame uses meters, with `+x` east and `−z` north. Descriptions use explicit spatial rules; no AI service is required.
+The coordinate frame uses local model meters, with `+x` east and `−z` north. Descriptions refer to Broadway gateway, TKTS red steps, plaza seating, a subway entrance, public tables, and a food kiosk. They use explicit spatial rules; no AI service is required.
 
 The destination cards display live occupancy. Pedestrians stay within the plaza, avoid obstacle boundaries, wait when no route or destination capacity is available, and stop when they arrive.
 

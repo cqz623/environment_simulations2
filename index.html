@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#142a29">
-    <meta name="description" content="An interactive spatial simulation of pedestrian occupancy and wayfinding in a public plaza.">
-    <title>Common Ground — Public Plaza Simulation</title>
+    <meta name="description" content="A stylized Times Square pedestrian plaza simulation in New York City, with live wayfinding and location queries.">
+    <title>Common Ground — Times Square Simulation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css?v=20261008-location2">
+    <link rel="stylesheet" href="./styles.css?v=20261008-times-square1">
     <script type="importmap">
       {
         "imports": {
@@ -18,25 +18,25 @@
         }
       }
     </script>
-    <script type="module" src="./app.js?v=20261008-location2"></script>
+    <script type="module" src="./app.js?v=20261008-times-square1"></script>
   </head>
   <body>
     <main class="app-shell">
-      <div id="canvas-host" aria-label="Interactive 3D public plaza"></div>
+      <div id="canvas-host" aria-label="Interactive 3D Times Square pedestrian plaza"></div>
       <div id="map-labels" aria-hidden="true"></div>
 
       <header class="site-header">
         <div class="brand-mark">C<span>G</span></div>
         <div class="brand-copy"><strong>COMMON GROUND</strong><span>Spatial behavior lab</span></div>
         <div class="header-divider"></div>
-        <div class="header-study">PUBLIC PLAZA <span>/</span> STUDY 01</div>
+        <div class="header-study">NEW YORK CITY <span>/</span> TIMES SQUARE</div>
         <div class="live-pill"><span class="live-dot"></span><span id="live-label">LIVE SIMULATION</span></div>
       </header>
 
       <section class="panel introduction" aria-labelledby="page-title">
         <div class="eyebrow"><span class="eyebrow-line"></span> INTERACTIVE FIELD STUDY</div>
-        <h1 id="page-title">A plaza<br>in <em>motion.</em></h1>
-        <p class="intro-copy">Watch how people choose destinations, navigate shared paths, and adapt when the space changes.</p>
+        <h1 id="page-title">Times Square<br>in <em>motion.</em></h1>
+        <p class="intro-copy">Explore a stylized Broadway pedestrian plaza: follow the crowd, visit the red steps, and change the routes through the space.</p>
         <div class="panel-rule"></div>
         <div class="section-heading"><span>SIMULATION CONTROLS</span><span>01 / 03</span></div>
         <button id="play-button" class="primary-button" type="button"><span class="button-icon" id="play-icon">Ⅱ</span><span id="play-label">Pause walking</span><span class="button-arrow">↗</span></button>
@@ -48,7 +48,7 @@
         </div>
         <div class="speed-row"><label for="speed-range">WALKING SPEED</label><output id="speed-value" for="speed-range">1.0×</output></div>
         <input id="speed-range" type="range" min="0.5" max="3" step="0.5" value="1" aria-label="Walking speed multiplier">
-        <div class="status-box"><span class="status-icon">↗</span><span id="status-text">Select a person in the plaza, then choose a destination.</span></div>
+        <div class="status-box"><span class="status-icon">↗</span><span id="status-text">Select a pedestrian. Open Simulation to choose a destination.</span></div>
       </section>
 
       <aside class="panel insight" aria-label="Simulation data">
@@ -83,7 +83,7 @@
             <div><span>SCREEN COORDINATES</span><strong id="location-screen">—</strong></div>
             <div class="wide"><span>SEMANTIC LOCATION</span><strong id="location-semantic">—</strong></div>
           </div>
-          <p class="location-intro">The same place, expressed as exact coordinates or a human description.</p>
+          <p class="location-intro">A Times Square place expressed as local plaza coordinates or a human description. These are model coordinates, not GPS.</p>
           <div class="location-axis">PLAZA FRAME <span>+x EAST</span><span>−z NORTH</span></div>
 
           <div class="location-section-title"><span>02</span> REFERENCE FRAME → OCCUPANT</div>
@@ -104,20 +104,20 @@
           <div class="location-section-title"><span>04</span> DESCRIPTION → LOCATION</div>
           <label class="location-label" for="description-input">Describe a place</label>
           <div class="description-form">
-            <input id="description-input" type="text" placeholder="Near the entrance" autocomplete="off">
+            <input id="description-input" type="text" placeholder="Near the red steps" autocomplete="off">
             <button id="resolve-button" type="button">FIND</button>
           </div>
           <div class="example-queries">
-            <button type="button" data-example="Near the fountain">Near the fountain</button>
-            <button type="button" data-example="North of the entrance">North of the entrance</button>
-            <button type="button" data-example="Beside the café">Beside the café</button>
-            <button type="button" data-example="Between the fountain and bench garden">Between two places</button>
+            <button type="button" data-example="Near the red steps">Near the red steps</button>
+            <button type="button" data-example="North of the Broadway gateway">North of the gateway</button>
+            <button type="button" data-example="Beside the food kiosk">Beside the kiosk</button>
+            <button type="button" data-example="Between the red steps and plaza seating">Between two places</button>
           </div>
           <div id="description-result" class="location-answer" aria-live="polite">A rule will translate your phrase into a specific walkable point.</div>
         </div>
       </aside>
 
-      <div class="map-note"><span class="note-diamond">◆</span> URBAN SPACE / PEDESTRIAN FLOW <span class="note-code">PLAZA 01</span></div>
+      <div class="map-note"><span class="note-diamond">◆</span> BROADWAY / PEDESTRIAN FLOW <span class="note-code">NYC 01</span></div>
       <div class="compass-note"><strong>N</strong><span>↑</span><small>−Z</small></div>
       <div class="map-instructions">DRAG TO ORBIT <span>·</span> SCROLL TO ZOOM <span>·</span> CLICK A PERSON TO INSPECT</div>
       <div id="mode-hint" class="mode-hint" hidden></div>

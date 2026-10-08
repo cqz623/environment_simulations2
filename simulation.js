@@ -14,17 +14,17 @@ export const EDGES = [
 ];
 
 export const DESTINATIONS = [
-  { id: "entry", name: "West entrance", type: "entrance", node: "D", capacity: 8, color: "#648d8a", short: "01" },
-  { id: "bench", name: "Bench garden", type: "bench", node: "G", capacity: 4, color: "#b98862", short: "02" },
-  { id: "cafe", name: "Plaza café", type: "café", node: "C", capacity: 5, color: "#b96e53", short: "03" },
-  { id: "shade", name: "Shaded court", type: "shaded area", node: "I", capacity: 6, color: "#829b72", short: "04" }
+  { id: "entry", name: "Broadway gateway", type: "pedestrian entrance", node: "D", capacity: 8, color: "#6cabb2", short: "01" },
+  { id: "bench", name: "Plaza seating", type: "tables & chairs", node: "G", capacity: 4, color: "#db9a55", short: "02" },
+  { id: "cafe", name: "TKTS red steps", type: "viewing steps", node: "C", capacity: 5, color: "#d65459", short: "03" },
+  { id: "shade", name: "Food kiosk", type: "street kiosk", node: "I", capacity: 6, color: "#8bb6a2", short: "04" }
 ];
 
 const START_OBSTACLES = [
   { id: "O1", type: "planter", x: -5, z: -4.3, radius: 1.35, permanent: true },
   { id: "O2", type: "planter", x: 5, z: 4.3, radius: 1.35, permanent: true },
-  { id: "O3", type: "building", x: 4.8, z: -4.7, radius: 1.3, permanent: true },
-  { id: "O4", type: "fountain", x: 3.2, z: 6.4, radius: 1.05, permanent: true }
+  { id: "O3", type: "subway entrance", x: 4.8, z: -4.7, radius: 1.3, permanent: true },
+  { id: "O4", type: "public tables", x: 3.2, z: 6.4, radius: 1.05, permanent: true }
 ];
 
 const START_PEDESTRIANS = [

@@ -4,8 +4,8 @@ import {
   BOUNDS, NODES, EDGES, DESTINATIONS, blockedEdges,
   createInitialState, createPedestrian, selectDestination,
   addObstacle, removeObstacle, tick
-} from "./simulation.js?v=20261008-location2";
-import { landmarksFor, occupantsAt, relativeLocation, resolveDescription, semanticLocation } from "./location.js?v=20261008-location2";
+} from "./simulation.js?v=20261008-times-square1";
+import { landmarksFor, occupantsAt, relativeLocation, resolveDescription, semanticLocation } from "./location.js?v=20261008-times-square1";
 
 const $ = (selector) => document.querySelector(selector);
 const host = $("#canvas-host");
@@ -23,8 +23,8 @@ let resolvedRule = "";
 let activeTab = "location";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#dce1dd");
-scene.fog = new THREE.Fog("#dce1dd", 57, 105);
+scene.background = new THREE.Color("#abb8c2");
+scene.fog = new THREE.Fog("#abb8c2", 65, 115);
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 130);
 camera.position.set(31, 31, 35);
 camera.lookAt(0, 0, 0);
@@ -65,7 +65,7 @@ scene.add(fill);
 
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: "#cbd3cf", roughness: 1 })
+  new THREE.MeshStandardMaterial({ color: "#697177", roughness: 1 })
 );
 ground.rotation.x = -Math.PI / 2;
 ground.position.y = -0.31;
@@ -76,9 +76,9 @@ function pavingTexture() {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 128;
   const context = canvas.getContext("2d");
-  context.fillStyle = "#e9e3d7";
+  context.fillStyle = "#a8afb0";
   context.fillRect(0, 0, 128, 128);
-  context.strokeStyle = "#d6d0c5";
+  context.strokeStyle = "#858e90";
   context.lineWidth = 1;
   context.strokeRect(0.5, 0.5, 127, 127);
   context.beginPath();
@@ -96,7 +96,7 @@ function pavingTexture() {
 
 const plaza = new THREE.Mesh(
   new THREE.BoxGeometry(28.4, 0.33, 28.4),
-  new THREE.MeshStandardMaterial({ color: "#e9e3d7", roughness: 0.96 })
+  new THREE.MeshStandardMaterial({ color: "#a8afb0", roughness: 0.96 })
 );
 plaza.position.y = -0.16;
 plaza.receiveShadow = true;
@@ -119,6 +119,16 @@ const edgeLine = new THREE.LineLoop(
   new THREE.LineBasicMaterial({ color: "#607d76", transparent: true, opacity: 0.62 })
 );
 scene.add(edgeLine);
+
+// A diagonal paving band suggests Broadway crossing the Midtown street grid.
+const broadwayBand = new THREE.Mesh(
+  new THREE.BoxGeometry(5.4, 0.015, 37),
+  new THREE.MeshStandardMaterial({ color: "#777f84", roughness: 1 })
+);
+broadwayBand.position.y = 0.026;
+broadwayBand.rotation.y = Math.PI / 4;
+broadwayBand.receiveShadow = true;
+scene.add(broadwayBand);
 
 function material(color, roughness = 0.85) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.04 });
@@ -166,17 +176,75 @@ function tree(parent, x, z, scale = 1) {
   sphere(parent, 0.55 * scale, x + 0.35 * scale, 2.23 * scale, z - 0.2 * scale, "#8ca681", 1);
 }
 
+function billboardTexture(title, subtitle, start, end) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  const gradient = context.createLinearGradient(0, 0, 512, 256);
+  gradient.addColorStop(0, start);
+  gradient.addColorStop(1, end);
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 512, 256);
+  context.fillStyle = "rgba(255,255,255,.13)";
+  for (let x = -120; x < 600; x += 95) {
+    context.save();
+    context.translate(x, 0);
+    context.rotate(-0.22);
+    context.fillRect(0, 0, 20, 320);
+    context.restore();
+  }
+  context.fillStyle = "#fffaf1";
+  context.textAlign = "center";
+  context.font = "700 63px Arial";
+  context.fillText(title, 256, 120, 470);
+  context.font = "700 28px Arial";
+  context.letterSpacing = "5px";
+  context.fillText(subtitle, 256, 175, 470);
+  context.fillRect(72, 199, 368, 5);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function billboard(parent, x, y, z, width, height, facing, title, subtitle, start, end) {
+  const frame = new THREE.Mesh(
+    new THREE.PlaneGeometry(width + 0.28, height + 0.28),
+    new THREE.MeshBasicMaterial({ color: "#151b29", side: THREE.DoubleSide })
+  );
+  const sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({ map: billboardTexture(title, subtitle, start, end), side: THREE.DoubleSide })
+  );
+  frame.position.set(x, y, z);
+  sign.position.set(x + (facing === "east" ? 0.02 : 0), y, z + (facing === "south" ? 0.02 : 0));
+  frame.rotation.y = sign.rotation.y = facing === "east" ? Math.PI / 2 : 0;
+  parent.add(frame, sign);
+}
+
 const siteObjects = new THREE.Group();
 scene.add(siteObjects);
-for (const [x, z, w, d, h] of [
-  [-20, -12, 7, 11, 5.5], [-20, 4, 7, 10, 4.5], [-19, 17, 8, 7, 6],
-  [20, -15, 7, 9, 5], [21, 0, 9, 13, 7], [18, 18, 8, 8, 5],
-  [-8, -21, 10, 8, 3.8], [7, -21, 13, 8, 4.5], [-7, 21, 13, 8, 5.5], [8, 22, 10, 7, 4.1]
-]) {
-  box(siteObjects, w, h, d, x, h / 2 - 0.25, z, "#b5c1bb");
-  box(siteObjects, w + 0.25, 0.22, d + 0.25, x, h - 0.12, z, "#879c96");
+for (const [x, z, w, d] of [[16.5, 0, 4.5, 41], [0, 16.5, 41, 4.5]]) {
+  box(siteObjects, w, 0.035, d, x, -0.275, z, "#424a52", false);
 }
-for (const [x, z, scale] of [[-15.7,-10,1],[-16.2,2,.8],[-16,12,1.05],[16.2,-8,.9],[16,8,1],[-9,15.5,.9],[4,15.7,.8]]) {
+for (let x = -12; x <= 12; x += 2.2) {
+  box(siteObjects, 1.2, 0.02, 2.2, x, -0.24, 16.5, "#e7e8dc", false);
+}
+for (const [x, z, w, d, h, color] of [
+  [-20, -12, 7, 11, 18, "#384554"], [-20, 4, 7, 10, 15, "#465261"],
+  [-19, 17, 8, 7, 8, "#53606a"], [20, -15, 7, 9, 9, "#46515e"],
+  [21, 0, 9, 13, 7, "#4f5c68"], [18, 18, 8, 8, 5, "#56606a"],
+  [-8, -21, 10, 8, 17, "#3b4655"], [7, -21, 13, 8, 20, "#303f50"],
+  [-7, 27, 13, 8, 4, "#59636d"], [8, 27, 10, 7, 4, "#59646c"]
+]) {
+  box(siteObjects, w, h, d, x, h / 2 - 0.25, z, color);
+  box(siteObjects, w + 0.25, 0.22, d + 0.25, x, h - 0.12, z, "#273341");
+}
+billboard(siteObjects, -16.43, 11.4, -12, 8.7, 4.5, "east", "BROADWAY", "THEATRE DISTRICT", "#e23464", "#5c3bb2");
+billboard(siteObjects, -16.43, 9.5, 4, 8.0, 3.7, "east", "NEW YORK", "CITY LIGHTS", "#166da8", "#25b6ad");
+billboard(siteObjects, -8, 10.8, -16.87, 8.0, 4.0, "south", "42ND ST", "TIMES SQUARE", "#e15d3e", "#b92257");
+billboard(siteObjects, 7, 12.5, -16.87, 10.5, 5.0, "south", "TIMES SQUARE", "BROADWAY PLAZA", "#433cac", "#d63c86");
+for (const [x, z, scale] of [[-15.7,-10,.75],[-16.2,2,.7],[16.2,-8,.75],[16,8,.8],[-9,15.5,.7]]) {
   tree(siteObjects, x, z, scale);
 }
 
@@ -191,7 +259,7 @@ for (const [a, b] of EDGES) {
   const length = Math.hypot(dx, dz);
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(1.85, 0.025, length),
-    material("#cfc6b7", 1)
+    material("#bfc7c8", 1)
   );
   mesh.position.set((start.x + end.x) / 2, 0.045, (start.z + end.z) / 2);
   mesh.rotation.y = Math.atan2(dx, dz);
@@ -203,7 +271,7 @@ function refreshPaths() {
   const blocked = new Set(blockedEdges(state.obstacles).map(([a, b]) => a + "-" + b));
   EDGES.forEach(([a, b], index) => {
     const closed = blocked.has(a + "-" + b);
-    pathMeshes[index].material.color.set(closed ? "#baaa9d" : "#d8cfc0");
+    pathMeshes[index].material.color.set(closed ? "#777f82" : "#c7cdcc");
     pathMeshes[index].material.opacity = closed ? 0.6 : 1;
     pathMeshes[index].material.transparent = closed;
   });
@@ -227,42 +295,42 @@ for (const destination of DESTINATIONS) {
   labelsHost.appendChild(label);
   labels.set(destination.id, label);
 }
-const fountainLabel = document.createElement("div");
-fountainLabel.className = "map-label";
-fountainLabel.style.setProperty("--dest-color", "#779e9a");
-fountainLabel.innerHTML = '<span class="map-label-dot">✦</span><strong>Fountain</strong>';
-labelsHost.appendChild(fountainLabel);
+const tablesLabel = document.createElement("div");
+tablesLabel.className = "map-label";
+tablesLabel.style.setProperty("--dest-color", "#dc6b57");
+tablesLabel.innerHTML = '<span class="map-label-dot">✦</span><strong>Public tables</strong>';
+labelsHost.appendChild(tablesLabel);
 
 // Places are built around the arrival markers so every destination remains reachable.
 const architecture = new THREE.Group();
 scene.add(architecture);
-// West entrance: twin masonry gates.
-box(architecture, 0.52, 2.25, 1.2, -12.8, 1.12, -1.7, "#9ca9a2");
-box(architecture, 0.52, 2.25, 1.2, -12.8, 1.12, 1.7, "#9ca9a2");
-box(architecture, 0.65, 0.32, 4.5, -12.8, 2.32, 0, "#738981");
-// Bench garden.
-for (const z of [11.2, 12.4]) {
-  box(architecture, 2.4, 0.15, 0.65, -10, 0.66, z, "#a3755b");
-  box(architecture, 2.4, 0.65, 0.12, -10, 1.04, z + 0.28, "#a3755b");
-  for (const x of [-10.9, -9.1]) box(architecture, 0.12, 0.58, 0.55, x, 0.33, z, "#566a62");
+// A Broadway entrance, movable plaza furniture, TKTS steps, and a food kiosk.
+for (const z of [-1.8, -0.6, 0.6, 1.8]) {
+  cylinder(architecture, 0.15, 0.17, 0.8, -12.8, 0.4, z, "#767f84");
 }
-tree(architecture, -12.2, 11.7, 0.92);
-// Café: a small kiosk and outdoor tables.
-box(architecture, 3.3, 1.9, 1.55, 10.7, 0.96, -12.3, "#b69b80");
-box(architecture, 4.0, 0.16, 2.15, 10.7, 2.02, -12.3, "#506e67");
-box(architecture, 2.1, 0.7, 0.16, 10.7, 0.88, -11.45, "#dfc5a5");
-for (const [x, z] of [[7.3,-11.2],[8.4,-12.4]]) {
-  cylinder(architecture, 0.48, 0.48, 0.08, x, 0.75, z, "#e0d0b6", 24);
-  cylinder(architecture, 0.055, 0.055, 0.7, x, 0.36, z, "#6d786d");
+box(architecture, 0.2, 2.8, 1.6, -12.9, 1.4, 3.1, "#253c58");
+box(architecture, 0.22, 0.42, 1.45, -12.75, 2.25, 3.1, "#2f78aa");
+
+for (const [x, z] of [[-11.3, 11.2], [-8.5, 11.8]]) {
+  cylinder(architecture, 0.47, 0.47, 0.08, x, 0.72, z, "#d75b56", 24);
+  cylinder(architecture, 0.055, 0.055, 0.67, x, 0.36, z, "#59636a");
+  for (const dx of [-0.7, 0.7]) {
+    box(architecture, 0.35, 0.11, 0.35, x + dx, 0.47, z, "#d75b56");
+    box(architecture, 0.08, 0.48, 0.08, x + dx, 0.25, z, "#6b7379");
+  }
 }
-// Shade structure.
-for (const [x,z] of [[8.1,11.1],[12.3,11.1],[8.1,13],[12.3,13]]) {
-  cylinder(architecture, 0.07, 0.07, 2.3, x, 1.15, z, "#667b70");
+
+for (let step = 0; step < 5; step++) {
+  box(architecture, 5.2, 0.23 + step * 0.21, 0.55,
+    10.2, 0.12 + step * 0.105, -10.2 - step * 0.56, "#c94753");
 }
-box(architecture, 4.7, 0.13, 2.5, 10.2, 2.34, 12.05, "#809883");
-for (const x of [8.6, 10.2, 11.8]) {
-  box(architecture, 0.16, 0.05, 2.55, x, 2.45, 12.05, "#acc0a0");
-}
+box(architecture, 5.6, 0.15, 3.4, 10.2, 0.02, -11.3, "#7f202e");
+billboard(architecture, 10.2, 2.0, -13.12, 3.8, 1.15, "south", "TKTS", "RED STEPS", "#cd2b41", "#8e213e");
+
+box(architecture, 3.5, 2.1, 1.8, 10.5, 1.05, 12.2, "#46545d");
+box(architecture, 4.0, 0.18, 2.2, 10.5, 2.18, 12.2, "#d46655");
+box(architecture, 2.7, 0.62, 0.08, 10.5, 1.05, 11.27, "#e6c78b");
+billboard(architecture, 10.5, 2.6, 13.25, 3.2, 0.58, "south", "FOOD", "KIOSK", "#ed9b4b", "#c04b58");
 
 const obstacleLayer = new THREE.Group();
 scene.add(obstacleLayer);
@@ -275,15 +343,21 @@ function makeObstacle(obstacle) {
     cylinder(group, obstacle.radius * 0.7, obstacle.radius * 0.76, 0.58, 0, 0.32, 0, "#9b9b82", 16);
     cylinder(group, obstacle.radius * 0.63, obstacle.radius * 0.63, 0.04, 0, 0.63, 0, "#5b7659", 16);
     for (const [x,z,s] of [[-.35,-.2,.65],[.4,.18,.52],[.05,.4,.42]]) tree(group, x, z, s);
-  } else if (obstacle.type === "building") {
-    box(group, 2.05, 1.55, 2.05, 0, 0.79, 0, "#c19d81");
-    box(group, 2.35, 0.22, 2.35, 0, 1.65, 0, "#6b8177");
-    box(group, 1.15, 0.57, 0.08, 0, 0.91, -1.07, "#49635d");
-  } else if (obstacle.type === "fountain") {
-    cylinder(group, 1.05, 1.12, 0.34, 0, 0.18, 0, "#a1aaa0", 32);
-    cylinder(group, 0.82, 0.82, 0.035, 0, 0.38, 0, "#739e9d", 32);
-    cylinder(group, 0.17, 0.25, 0.55, 0, 0.65, 0, "#c4c6b2", 20);
-    sphere(group, 0.17, 0, 1.0, 0, "#b2d3cd", 2);
+  } else if (obstacle.type === "subway entrance") {
+    box(group, 2.15, 0.16, 2.0, 0, 0.1, 0, "#313b45");
+    for (const x of [-0.9, 0.9]) {
+      cylinder(group, 0.055, 0.055, 1.2, x, 0.7, -0.9, "#8faaa4");
+      cylinder(group, 0.055, 0.055, 1.2, x, 0.7, 0.9, "#8faaa4");
+    }
+    box(group, 2.1, 0.12, 2.05, 0, 1.32, 0, "#3b786a");
+    cylinder(group, 0.26, 0.26, 0.1, 0, 1.52, 0, "#e9e5cc", 24);
+    billboard(group, 0, 1.88, 1.05, 2.0, 0.55, "south", "SUBWAY", "TIMES SQ", "#1c5393", "#176d91");
+  } else if (obstacle.type === "public tables") {
+    for (const [x, z] of [[-0.45, 0], [0.45, 0.32]]) {
+      cylinder(group, 0.37, 0.37, 0.08, x, 0.69, z, "#d85d55", 20);
+      cylinder(group, 0.045, 0.045, 0.66, x, 0.34, z, "#626a6d");
+      box(group, 0.27, 0.12, 0.27, x, 0.43, z - 0.58, "#e59b62");
+    }
   } else {
     disc(group, obstacle.radius, 0, 0.079, 0, "#c9805d", 0.24);
     for (const x of [-0.8, 0.8]) {
@@ -412,13 +486,13 @@ function updateLabels() {
     label.style.top = ((1 - position.y) * height / 2) + "px";
     label.style.display = position.z > 1 || position.z < -1 ? "none" : "flex";
   }
-  const fountain = state.obstacles.find((obstacle) => obstacle.type === "fountain");
-  fountainLabel.style.display = fountain ? "flex" : "none";
-  if (fountain) {
-    const position = new THREE.Vector3(fountain.x, 1.8, fountain.z).project(camera);
-    fountainLabel.style.left = ((position.x + 1) * width / 2) + "px";
-    fountainLabel.style.top = ((1 - position.y) * height / 2) + "px";
-    if (position.z > 1 || position.z < -1) fountainLabel.style.display = "none";
+  const tables = state.obstacles.find((obstacle) => obstacle.type === "public tables");
+  tablesLabel.style.display = tables ? "flex" : "none";
+  if (tables) {
+    const position = new THREE.Vector3(tables.x, 1.8, tables.z).project(camera);
+    tablesLabel.style.left = ((position.x + 1) * width / 2) + "px";
+    tablesLabel.style.top = ((1 - position.y) * height / 2) + "px";
+    if (position.z > 1 || position.z < -1) tablesLabel.style.display = "none";
   }
   if (locationMarker.visible) {
     const position = new THREE.Vector3(locationMarker.position.x, 1.8, locationMarker.position.z).project(camera);
@@ -485,7 +559,7 @@ function renderPersonOptions() {
 
 function renderReferenceOptions() {
   const select = $("#reference-select");
-  const previous = select.value || "fountain";
+  const previous = select.value || "entry";
   select.innerHTML = "";
   for (const landmark of landmarksFor(state)) {
     const option = document.createElement("option");
@@ -651,7 +725,7 @@ $("#add-person-button").addEventListener("click", () => {
   refreshPeople();
   renderPersonOptions();
   updateUI();
-  showStatus(person.id + " created. Select a destination on the right.");
+  showStatus(person.id + " created. Open Simulation to choose a destination.");
 });
 $("#place-button").addEventListener("click", () => setMode("add"));
 $("#remove-button").addEventListener("click", () => setMode("remove"));
@@ -755,7 +829,7 @@ function handleSceneClick(event) {
   if (personHits.length) {
     selectedId = objectTag(personHits[0].object, "pedestrianId");
     updateUI();
-    showStatus(selectedId + " selected. Choose a destination on the right.");
+    showStatus(selectedId + " selected. Open Simulation to choose a destination.");
     return;
   }
   const destinationHits = raycaster.intersectObjects(destinationMeshes, false);

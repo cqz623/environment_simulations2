@@ -1,12 +1,13 @@
-import { BOUNDS, DESTINATIONS, EDGES, NODES, segmentDistance, segmentIsOpen } from "./simulation.js";
+import { BOUNDS, DESTINATIONS, EDGES, NODES, segmentDistance, segmentIsOpen } from "./simulation.js?v=20261008-times-square1";
 
 // x grows east, z grows south. Screen pixels are derived from these world coordinates.
 const LANDMARK_DEFINITIONS = [
-  { id: "fountain", name: "Fountain", aliases: ["fountain", "water feature"], obstacleId: "O4", x: 3.2, z: 6.4 },
-  { id: "entry", name: "West entrance", aliases: ["west entrance", "entrance", "entry", "gate"], node: "D" },
-  { id: "bench", name: "Bench garden", aliases: ["bench garden", "benches", "bench"], node: "G" },
-  { id: "cafe", name: "Plaza café", aliases: ["plaza cafe", "cafe", "coffee"], node: "C" },
-  { id: "shade", name: "Shaded court", aliases: ["shaded court", "shade", "canopy"], node: "I" }
+  { id: "tables", name: "Public tables", aliases: ["public tables", "tables", "chairs"], obstacleId: "O4", x: 3.2, z: 6.4 },
+  { id: "subway", name: "Times Sq subway entrance", aliases: ["times sq subway", "subway entrance", "subway", "metro"], obstacleId: "O3", x: 4.8, z: -4.7 },
+  { id: "entry", name: "Broadway gateway", aliases: ["broadway gateway", "broadway entrance", "entrance", "entry", "gate"], node: "D" },
+  { id: "bench", name: "Plaza seating", aliases: ["plaza seating", "seating", "benches", "bench"], node: "G" },
+  { id: "steps", name: "TKTS red steps", aliases: ["tkts red steps", "red steps", "tkts", "steps"], node: "C" },
+  { id: "kiosk", name: "Food kiosk", aliases: ["food kiosk", "kiosk", "food", "coffee"], node: "I" }
 ];
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -53,11 +54,11 @@ export function semanticLocation(point, state) {
   const nearest = landmarks.reduce((best, current) =>
     !best || distance(point, current) < distance(point, best) ? current : best, null
   );
-  if (!nearest) return "Within the public plaza";
+  if (!nearest) return "Within the Times Square pedestrian plaza";
   const meters = distance(point, nearest);
-  if (meters < 1.2) return "At " + nearest.name;
-  if (meters < 4) return "Near " + nearest.name;
-  return relativeLocation(point, nearest).description;
+  if (meters < 1.2) return "Times Square · at " + nearest.name;
+  if (meters < 4) return "Times Square · near " + nearest.name;
+  return "Times Square · " + relativeLocation(point, nearest).description;
 }
 
 export function occupantsAt(point, state) {
@@ -73,7 +74,7 @@ export function occupantsAt(point, state) {
   }
   for (const obstacle of state.obstacles) {
     if (distance(point, obstacle) <= obstacle.radius) {
-      occupants.push({ type: "Obstacle", label: obstacle.type === "fountain" ? "Fountain" : obstacle.id + " " + obstacle.type, detail: "inside footprint", distance: round(distance(point, obstacle)) });
+      occupants.push({ type: "Obstacle", label: obstacle.id + " " + obstacle.type, detail: "inside footprint", distance: round(distance(point, obstacle)) });
     }
   }
   for (const destination of DESTINATIONS) {
@@ -130,7 +131,7 @@ export function resolveDescription(description, state) {
   if (!text) return { error: "Enter a description such as “near the entrance”." };
   if (text.includes("between")) {
     const names = landmarks.filter((landmark) => landmark.aliases.some((alias) => text.includes(alias)));
-    if (names.length < 2) return { error: "“Between” needs two known places, such as “between the fountain and bench garden”." };
+    if (names.length < 2) return { error: "“Between” needs two known places, such as “between the red steps and plaza seating”." };
     const [first, second] = names;
     const target = { x: (first.x + second.x) / 2, z: (first.z + second.z) / 2 };
     const point = chooseSample(state, target, (candidate) => distance(candidate, target) <= 4);
@@ -138,7 +139,7 @@ export function resolveDescription(description, state) {
     return { point, rule: "Closest open path to the midpoint of " + first.name + " and " + second.name + ".", semantic: "Between " + first.name + " and " + second.name };
   }
   const landmark = findMention(text, landmarks);
-  if (!landmark) return { error: "Choose a known place: fountain, entrance, bench garden, café, or shaded court." };
+  if (!landmark) return { error: "Choose a known place: Broadway gateway, red steps, plaza seating, subway entrance, public tables, or food kiosk." };
   const directional = text.match(/\b(north|south|east|west)(?:\s*[- ]\s*(east|west))?\s+of\b/);
   if (directional) {
     const primary = directional[1];
