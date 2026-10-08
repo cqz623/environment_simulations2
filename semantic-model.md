@@ -8,6 +8,7 @@ Create a single-page web application that visualizes the semantic model describe
 - Use vanilla JavaScript.
 - The primary view should be a Three.js rendered view that fills the browser window.
 - Show a public plaza in 3D with moving pedestrians, visible destinations, paths, and obstacles. Provide a compact overlay for simulation controls and live occupancy and wayfinding statistics.
+- Include a Location panel that expresses positions as coordinates and human-readable spatial descriptions, and supports the four spatial queries below.
 
 ## Context
 
@@ -49,7 +50,7 @@ Describe each entity with the following parameters:
   - `status`: `open` or `blocked`.
 - **Obstacle**
   - `id`: unique identifier.
-  - `type`: `building`, `planter`, or `temporary barrier`.
+  - `type`: `building`, `planter`, `fountain`, or `temporary barrier`.
   - `position`: `(x, z)` location.
   - `boundary`: footprint that cannot be entered.
 - **Public Space**
@@ -84,3 +85,13 @@ Describe each entity with the following parameters:
 - When a Pedestrian reaches the selected Destination, the Pedestrian enters the `arrived` state, stops moving, and counts toward that Destination's occupancy.
 - If an arrived Pedestrian selects a new Destination, the previous Destination's occupancy decreases before the Pedestrian leaves.
 - Pausing the simulation freezes movement without changing positions, routes, or occupancies; resuming continues from the same state.
+
+## Location System
+
+- **Computational location:** Every ground-level position is an `(x, z)` pair in meters within the plaza boundary. The plaza center is `(0, 0)`; positive `x` points east and negative `z` points north. Project a world position through the active Three.js camera to display its screen-pixel coordinates. Clicking the scene performs the inverse ray-to-ground-plane mapping.
+- **Human-readable location:** Describe a position using named landmarks and spatial relations, for example `Near the fountain`, `North of the entrance`, or `Between the fountain and bench garden`. The initial fountain is an obstacle and landmark; the four destinations are also landmarks.
+- **Object → Location:** Selecting a pedestrian reveals its current world coordinates, screen coordinates, and semantic location. These values update as the pedestrian moves or the camera changes.
+- **Location → Occupant:** Clicking a plaza point or entering `(x, z)` reports the pedestrians, destinations, obstacles, and paths whose footprints contain that point. If nothing is present, report open plaza; distinguish locations outside the boundary.
+- **Reference Frame → Occupant:** Choose a landmark as a reference frame and report the selected pedestrian's distance, compass direction, and east/north offsets relative to it.
+- **Description → Specific Location:** Parse the defined relations `near`, `beside`, cardinal directions `north/south/east/west of`, and `between` two landmarks. Resolve a recognized description to a specific point on an open, walkable path, show its coordinates, and mark it in the 3D view. Explain the rule used; report when no valid point exists.
+- **Interpretation rules:** `near` means within 4 meters of the landmark; `beside` means within 3 meters. Directional queries require a point at least 1.2 meters in the requested direction and within 7 meters of the landmark. `between` chooses the open path point closest to the two landmarks' midpoint, within 4 meters of that midpoint. The result must remain inside the plaza and outside obstacles.

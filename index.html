@@ -52,6 +52,11 @@
       </section>
 
       <aside class="panel insight" aria-label="Simulation data">
+        <div class="insight-tabs" role="tablist" aria-label="Information panels">
+          <button id="simulation-tab" class="insight-tab active" type="button" role="tab" aria-selected="true" aria-controls="simulation-view">SIMULATION</button>
+          <button id="location-tab" class="insight-tab" type="button" role="tab" aria-selected="false" aria-controls="location-view">LOCATION</button>
+        </div>
+        <div id="simulation-view" role="tabpanel" aria-labelledby="simulation-tab">
         <div class="insight-head"><span>SPACE / STATISTICS</span><span class="insight-index">LIVE DATA</span></div>
         <div class="big-stat"><span id="total-count">12</span><div>PEDESTRIANS<br>IN THE PLAZA</div></div>
         <div class="small-stats">
@@ -68,9 +73,54 @@
         <div id="person-detail" class="person-detail"></div>
         <div class="obstacle-heading"><span>OBSTACLES</span><span id="obstacle-count">0 IN SPACE</span></div>
         <div id="obstacle-list" class="obstacle-list"></div>
+        </div>
+        <div id="location-view" role="tabpanel" aria-labelledby="location-tab" hidden>
+          <div class="insight-head"><span>LOCATION SYSTEM</span><span class="insight-index">LIVE QUERY</span></div>
+          <p class="location-intro">The same place, expressed as exact coordinates or a human description.</p>
+          <div class="location-axis">PLAZA FRAME <span>+x EAST</span><span>−z NORTH</span></div>
+
+          <div class="location-section-title"><span>01</span> OBJECT → LOCATION</div>
+          <label class="location-label" for="location-person-select">Pedestrian</label>
+          <select id="location-person-select" class="location-select" aria-label="Pedestrian to locate"></select>
+          <div class="location-readout">
+            <div><span>WORLD COORDINATES</span><strong id="location-world">—</strong></div>
+            <div><span>SCREEN COORDINATES</span><strong id="location-screen">—</strong></div>
+            <div class="wide"><span>SEMANTIC LOCATION</span><strong id="location-semantic">—</strong></div>
+          </div>
+
+          <div class="location-section-title"><span>02</span> REFERENCE FRAME → OCCUPANT</div>
+          <label class="location-label" for="reference-select">Relative to</label>
+          <select id="reference-select" class="location-select" aria-label="Reference landmark"></select>
+          <div id="reference-result" class="location-answer">—</div>
+
+          <div class="location-section-title"><span>03</span> LOCATION → OCCUPANT</div>
+          <p class="location-help">Click a point in the plaza or enter world coordinates.</p>
+          <button id="inspect-mode-button" class="location-action outline" type="button">◎ Inspect a point on the map</button>
+          <div class="coordinate-form">
+            <label>X <input id="query-x" type="number" min="-14" max="14" step="0.1" value="0" inputmode="decimal"></label>
+            <label>Z <input id="query-z" type="number" min="-14" max="14" step="0.1" value="0" inputmode="decimal"></label>
+            <button id="query-button" type="button">QUERY</button>
+          </div>
+          <div id="query-result" class="location-answer" aria-live="polite">Choose a point to see what occupies it.</div>
+
+          <div class="location-section-title"><span>04</span> DESCRIPTION → LOCATION</div>
+          <label class="location-label" for="description-input">Describe a place</label>
+          <div class="description-form">
+            <input id="description-input" type="text" placeholder="Near the entrance" autocomplete="off">
+            <button id="resolve-button" type="button">FIND</button>
+          </div>
+          <div class="example-queries">
+            <button type="button" data-example="Near the fountain">Near the fountain</button>
+            <button type="button" data-example="North of the entrance">North of the entrance</button>
+            <button type="button" data-example="Beside the café">Beside the café</button>
+            <button type="button" data-example="Between the fountain and bench garden">Between two places</button>
+          </div>
+          <div id="description-result" class="location-answer" aria-live="polite">A rule will translate your phrase into a specific walkable point.</div>
+        </div>
       </aside>
 
       <div class="map-note"><span class="note-diamond">◆</span> URBAN SPACE / PEDESTRIAN FLOW <span class="note-code">PLAZA 01</span></div>
+      <div class="compass-note"><strong>N</strong><span>↑</span><small>−Z</small></div>
       <div class="map-instructions">DRAG TO ORBIT <span>·</span> SCROLL TO ZOOM <span>·</span> CLICK A PERSON TO INSPECT</div>
       <div id="mode-hint" class="mode-hint" hidden></div>
     </main>

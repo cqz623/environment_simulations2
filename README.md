@@ -11,6 +11,17 @@ An interactive 3D public plaza occupancy and wayfinding simulation based on [sem
 - Pause or resume walking, adjust the speed, and reset the plaza at any time.
 - Drag to orbit the 3D view and scroll to zoom.
 
+## Explore location
+
+Open the **Location** tab in the right panel. The selected pedestrian is shown in two forms: exact `(x, z)` meters and a human-readable place description. The panel also shows where that world point appears on screen in pixels.
+
+- Select a pedestrian to answer **Object → Location**.
+- Choose a landmark to read the pedestrian's distance and direction relative to it.
+- Click **Inspect a point on the map**, then click the plaza, or enter coordinates to answer **Location → Occupant**.
+- Enter `Near the fountain`, `North of the entrance`, `Beside the café`, or `Between the fountain and bench garden` to turn a description into a highlighted walkable point.
+
+The coordinate frame uses meters, with `+x` east and `−z` north. Descriptions use explicit spatial rules; no AI service is required.
+
 The destination cards display live occupancy. Pedestrians stay within the plaza, avoid obstacle boundaries, wait when no route or destination capacity is available, and stop when they arrive.
 
 ## Run locally

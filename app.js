@@ -5,6 +5,7 @@ import {
   createInitialState, createPedestrian, selectDestination,
   addObstacle, removeObstacle, tick
 } from "./simulation.js";
+import { landmarksFor, occupantsAt, relativeLocation, resolveDescription, semanticLocation } from "./location.js";
 
 const $ = (selector) => document.querySelector(selector);
 const host = $("#canvas-host");
@@ -16,6 +17,10 @@ let mode = null;
 let lastFrame = performance.now();
 let lastUI = 0;
 let pointerStart = null;
+let inspectedPoint = null;
+let resolvedPoint = null;
+let resolvedRule = "";
+let activeTab = "simulation";
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#dce1dd");
@@ -222,6 +227,11 @@ for (const destination of DESTINATIONS) {
   labelsHost.appendChild(label);
   labels.set(destination.id, label);
 }
+const fountainLabel = document.createElement("div");
+fountainLabel.className = "map-label";
+fountainLabel.style.setProperty("--dest-color", "#779e9a");
+fountainLabel.innerHTML = '<span class="map-label-dot">✦</span><strong>Fountain</strong>';
+labelsHost.appendChild(fountainLabel);
 
 // Places are built around the arrival markers so every destination remains reachable.
 const architecture = new THREE.Group();
@@ -269,6 +279,11 @@ function makeObstacle(obstacle) {
     box(group, 2.05, 1.55, 2.05, 0, 0.79, 0, "#c19d81");
     box(group, 2.35, 0.22, 2.35, 0, 1.65, 0, "#6b8177");
     box(group, 1.15, 0.57, 0.08, 0, 0.91, -1.07, "#49635d");
+  } else if (obstacle.type === "fountain") {
+    cylinder(group, 1.05, 1.12, 0.34, 0, 0.18, 0, "#a1aaa0", 32);
+    cylinder(group, 0.82, 0.82, 0.035, 0, 0.38, 0, "#739e9d", 32);
+    cylinder(group, 0.17, 0.25, 0.55, 0, 0.65, 0, "#c4c6b2", 20);
+    sphere(group, 0.17, 0, 1.0, 0, "#b2d3cd", 2);
   } else {
     disc(group, obstacle.radius, 0, 0.079, 0, "#c9805d", 0.24);
     for (const x of [-0.8, 0.8]) {
@@ -290,6 +305,12 @@ function refreshObstacles() {
   for (const obstacle of state.obstacles) if (!obstacleMeshes.has(obstacle.id)) makeObstacle(obstacle);
   refreshPaths();
   renderObstacleList();
+  renderReferenceOptions();
+  if (resolvedPoint) {
+    resolvedPoint = null;
+    $("#description-result").textContent = "The space changed. Run the description again for an updated point.";
+    if (!inspectedPoint) clearLocationMarker();
+  }
 }
 
 const peopleLayer = new THREE.Group();
@@ -329,6 +350,35 @@ const routeLine = new THREE.Line(
 );
 routeLine.frustumCulled = false;
 scene.add(routeLine);
+const locationMarker = new THREE.Group();
+const markerRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.47, 0.59, 40),
+  new THREE.MeshBasicMaterial({ color: "#dc805a", side: THREE.DoubleSide, depthTest: false })
+);
+markerRing.rotation.x = -Math.PI / 2;
+markerRing.position.y = 0.15;
+locationMarker.add(markerRing);
+const markerStem = cylinder(locationMarker, 0.055, 0.08, 1.25, 0, 0.77, 0, "#c87c56", 12);
+markerStem.material.depthTest = false;
+const markerTop = sphere(locationMarker, 0.17, 0, 1.43, 0, "#e29c70", 2);
+markerTop.material.depthTest = false;
+locationMarker.visible = false;
+scene.add(locationMarker);
+const locationLabel = document.createElement("div");
+locationLabel.className = "map-label query-label";
+locationLabel.textContent = "LOCATION QUERY";
+locationLabel.hidden = true;
+labelsHost.appendChild(locationLabel);
+function setLocationMarker(point, label) {
+  locationMarker.position.set(point.x, 0, point.z);
+  locationMarker.visible = true;
+  locationLabel.textContent = label;
+  locationLabel.hidden = false;
+}
+function clearLocationMarker() {
+  locationMarker.visible = false;
+  locationLabel.hidden = true;
+}
 function updateRouteLine() {
   const pedestrian = state.pedestrians.find((item) => item.id === selectedId);
   const ids = pedestrian?.targetNode ? [pedestrian.targetNode, ...pedestrian.queue] : [];
@@ -362,6 +412,29 @@ function updateLabels() {
     label.style.top = ((1 - position.y) * height / 2) + "px";
     label.style.display = position.z > 1 || position.z < -1 ? "none" : "flex";
   }
+  const fountain = state.obstacles.find((obstacle) => obstacle.type === "fountain");
+  fountainLabel.style.display = fountain ? "flex" : "none";
+  if (fountain) {
+    const position = new THREE.Vector3(fountain.x, 1.8, fountain.z).project(camera);
+    fountainLabel.style.left = ((position.x + 1) * width / 2) + "px";
+    fountainLabel.style.top = ((1 - position.y) * height / 2) + "px";
+    if (position.z > 1 || position.z < -1) fountainLabel.style.display = "none";
+  }
+  if (locationMarker.visible) {
+    const position = new THREE.Vector3(locationMarker.position.x, 1.8, locationMarker.position.z).project(camera);
+    locationLabel.style.left = ((position.x + 1) * width / 2) + "px";
+    locationLabel.style.top = ((1 - position.y) * height / 2) + "px";
+    locationLabel.style.display = position.z > 1 || position.z < -1 ? "none" : "flex";
+  }
+}
+
+function screenPosition(point) {
+  const projected = new THREE.Vector3(point.x, 0.08, point.z).project(camera);
+  if (projected.z < -1 || projected.z > 1 || Math.abs(projected.x) > 1 || Math.abs(projected.y) > 1) return null;
+  return {
+    x: Math.round((projected.x + 1) * host.clientWidth / 2),
+    y: Math.round((1 - projected.y) * host.clientHeight / 2)
+  };
 }
 
 function updatePeopleMeshes() {
@@ -375,15 +448,119 @@ function updatePeopleMeshes() {
 }
 
 function showStatus(message) { $("#status-text").textContent = message; }
+function setActiveTab(tab) {
+  activeTab = tab;
+  for (const name of ["simulation", "location"]) {
+    const selected = name === tab;
+    $("#" + name + "-view").hidden = !selected;
+    $("#" + name + "-tab").classList.toggle("active", selected);
+    $("#" + name + "-tab").setAttribute("aria-selected", String(selected));
+  }
+  if (tab !== "location" && mode === "inspect") setMode(null);
+}
 function setMode(next) {
   mode = mode === next ? null : next;
   $("#place-button").classList.toggle("active", mode === "add");
   $("#remove-button").classList.toggle("active", mode === "remove");
+  $("#inspect-mode-button").classList.toggle("active", mode === "inspect");
   $("#mode-hint").hidden = !mode;
   $("#mode-hint").textContent = mode === "add"
     ? "Click an open spot in the plaza to place a barrier."
-    : mode === "remove" ? "Click an obstacle in the plaza to remove it." : "";
+    : mode === "remove" ? "Click an obstacle in the plaza to remove it."
+    : mode === "inspect" ? "Click any point in the plaza to query its occupants." : "";
   renderer.domElement.style.cursor = mode ? "crosshair" : "grab";
+}
+
+function renderPersonOptions() {
+  const select = $("#location-person-select");
+  select.innerHTML = "";
+  for (const pedestrian of state.pedestrians) {
+    const option = document.createElement("option");
+    option.value = pedestrian.id;
+    option.textContent = "Pedestrian " + pedestrian.id.slice(1);
+    select.appendChild(option);
+  }
+  select.value = selectedId;
+}
+
+function renderReferenceOptions() {
+  const select = $("#reference-select");
+  const previous = select.value || "fountain";
+  select.innerHTML = "";
+  for (const landmark of landmarksFor(state)) {
+    const option = document.createElement("option");
+    option.value = landmark.id;
+    option.textContent = landmark.name;
+    select.appendChild(option);
+  }
+  select.value = landmarksFor(state).some((landmark) => landmark.id === previous) ? previous : "entry";
+}
+
+function updateLocationUI(selected) {
+  if (selected) {
+    $("#location-person-select").value = selected.id;
+    $("#location-world").textContent = "(" + selected.position.x.toFixed(1) + ", " + selected.position.z.toFixed(1) + ") m";
+    const screen = screenPosition(selected.position);
+    $("#location-screen").textContent = screen ? "(" + screen.x + ", " + screen.y + ") px" : "Outside view";
+    $("#location-semantic").textContent = semanticLocation(selected.position, state);
+    const reference = landmarksFor(state).find((landmark) => landmark.id === $("#reference-select").value);
+    if (reference) {
+      const relative = relativeLocation(selected.position, reference);
+      $("#reference-result").innerHTML = "<strong>" + selected.id + "</strong>: " + relative.description +
+        '<span class="answer-secondary">Δx ' + relative.eastMeters.toFixed(1) +
+        " m east · Δnorth " + relative.northMeters.toFixed(1) + " m</span>";
+    }
+  }
+  if (inspectedPoint) {
+    const result = occupantsAt(inspectedPoint, state);
+    const screen = screenPosition(inspectedPoint);
+    const position = "<strong>(" + inspectedPoint.x.toFixed(1) + ", " + inspectedPoint.z.toFixed(1) + ") m</strong>";
+    if (!result.inside) {
+      $("#query-result").innerHTML = position + '<span class="answer-secondary">Outside the public plaza boundary.</span>';
+    } else {
+      const summary = result.occupants.length
+        ? result.occupants.slice(0, 5).map((item) => item.type + ": " + item.label + " (" + item.detail + ")").join("<br>")
+        : "Open plaza — no mapped object occupies this point.";
+      const extra = result.occupants.length > 5 ? "<br>+" + (result.occupants.length - 5) + " more" : "";
+      $("#query-result").innerHTML = position + (screen ? " · screen (" + screen.x + ", " + screen.y + ") px" : "") +
+        '<span class="answer-secondary">' + summary + extra + "</span>";
+    }
+  }
+  if (resolvedPoint) {
+    const screen = screenPosition(resolvedPoint);
+    $("#description-result").innerHTML = "<strong>Specific location: (" + resolvedPoint.x.toFixed(1) + ", " +
+      resolvedPoint.z.toFixed(1) + ") m</strong>" +
+      '<span class="answer-secondary">' + resolvedRule +
+      (screen ? "<br>Screen: (" + screen.x + ", " + screen.y + ") px" : "<br>Currently outside the view") + "</span>";
+  }
+}
+
+function inspectLocation(point) {
+  inspectedPoint = { x: Math.round(point.x * 10) / 10, z: Math.round(point.z * 10) / 10 };
+  resolvedPoint = null;
+  $("#description-result").textContent = "A rule will translate your phrase into a specific walkable point.";
+  if (occupantsAt(inspectedPoint, state).inside) setLocationMarker(inspectedPoint, "INSPECTED LOCATION");
+  else clearLocationMarker();
+  updateLocationUI(state.pedestrians.find((pedestrian) => pedestrian.id === selectedId));
+  showStatus("Location query at (" + inspectedPoint.x.toFixed(1) + ", " + inspectedPoint.z.toFixed(1) + ") m.");
+}
+
+function runDescription() {
+  const result = resolveDescription($("#description-input").value, state);
+  if (result.error) {
+    resolvedPoint = null;
+    $("#description-result").textContent = result.error;
+    if (inspectedPoint && occupantsAt(inspectedPoint, state).inside) setLocationMarker(inspectedPoint, "INSPECTED LOCATION");
+    else clearLocationMarker();
+    return;
+  }
+  resolvedPoint = result.point;
+  resolvedRule = result.rule;
+  inspectedPoint = null;
+  $("#query-result").textContent = "Choose a point to see what occupies it.";
+  setLocationMarker(resolvedPoint, result.semantic.toUpperCase());
+  updateLocationUI(state.pedestrians.find((pedestrian) => pedestrian.id === selectedId));
+  showStatus("Description resolved to (" + resolvedPoint.x.toFixed(1) + ", " + resolvedPoint.z.toFixed(1) + ") m.");
 }
 
 function renderDestinations() {
@@ -450,6 +627,7 @@ function updateUI() {
       '<div class="person-meta"><span>STATUS <strong>' + selected.state.toUpperCase() + '</strong></span>' +
       '<span>SPEED <strong>' + selected.speed.toFixed(2) + ' m/s</strong></span></div>';
   } else detail.textContent = "Click a pedestrian in the plaza.";
+  updateLocationUI(selected);
 }
 
 function removeObstacleById(id) {
@@ -471,6 +649,7 @@ $("#add-person-button").addEventListener("click", () => {
   if (!person) return showStatus("No unoccupied walkable starting point is available.");
   selectedId = person.id;
   refreshPeople();
+  renderPersonOptions();
   updateUI();
   showStatus(person.id + " created. Select a destination on the right.");
 });
@@ -479,10 +658,16 @@ $("#remove-button").addEventListener("click", () => setMode("remove"));
 $("#reset-button").addEventListener("click", () => {
   state = createInitialState();
   selectedId = state.pedestrians[0].id;
+  inspectedPoint = null;
+  resolvedPoint = null;
+  clearLocationMarker();
+  $("#query-result").textContent = "Choose a point to see what occupies it.";
+  $("#description-result").textContent = "A rule will translate your phrase into a specific walkable point.";
   $("#speed-range").value = "1";
   if (mode) setMode(mode);
   refreshPeople();
   refreshObstacles();
+  renderPersonOptions();
   updateUI();
   showStatus("The original plaza layout and simulation have been restored.");
 });
@@ -490,6 +675,36 @@ $("#speed-range").addEventListener("input", (event) => {
   state.speedMultiplier = Number(event.target.value);
   updateUI();
 });
+$("#simulation-tab").addEventListener("click", () => setActiveTab("simulation"));
+$("#location-tab").addEventListener("click", () => setActiveTab("location"));
+$("#location-person-select").addEventListener("change", (event) => {
+  selectedId = event.target.value;
+  updateUI();
+  showStatus(selectedId + " selected for location queries.");
+});
+$("#reference-select").addEventListener("change", () => updateUI());
+$("#inspect-mode-button").addEventListener("click", () => setMode("inspect"));
+$("#query-button").addEventListener("click", () => {
+  const rawX = $("#query-x").value.trim();
+  const rawZ = $("#query-z").value.trim();
+  const x = Number(rawX);
+  const z = Number(rawZ);
+  if (!rawX || !rawZ || !Number.isFinite(x) || !Number.isFinite(z)) {
+    $("#query-result").textContent = "Enter numeric X and Z coordinates.";
+    return;
+  }
+  inspectLocation({ x, z });
+});
+$("#resolve-button").addEventListener("click", runDescription);
+$("#description-input").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") runDescription();
+});
+for (const example of document.querySelectorAll("[data-example]")) {
+  example.addEventListener("click", () => {
+    $("#description-input").value = example.dataset.example;
+    runDescription();
+  });
+}
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -527,6 +742,15 @@ function handleSceneClick(event) {
     else showStatus("Click a visible obstacle to remove it.");
     return;
   }
+  if (mode === "inspect") {
+    const point = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(groundPlane, point)) {
+      inspectLocation({ x: point.x, z: point.z });
+      $("#query-x").value = inspectedPoint.x.toFixed(1);
+      $("#query-z").value = inspectedPoint.z.toFixed(1);
+    }
+    return;
+  }
   const personHits = raycaster.intersectObjects([...peopleMeshes.values()], true);
   if (personHits.length) {
     selectedId = objectTag(personHits[0].object, "pedestrianId");
@@ -555,6 +779,7 @@ renderer.domElement.addEventListener("pointerup", (event) => {
 renderDestinations();
 refreshPeople();
 refreshObstacles();
+renderPersonOptions();
 updateUI();
 function animate(now) {
   requestAnimationFrame(animate);

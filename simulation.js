@@ -23,7 +23,8 @@ export const DESTINATIONS = [
 const START_OBSTACLES = [
   { id: "O1", type: "planter", x: -5, z: -4.3, radius: 1.35, permanent: true },
   { id: "O2", type: "planter", x: 5, z: 4.3, radius: 1.35, permanent: true },
-  { id: "O3", type: "building", x: 4.8, z: -4.7, radius: 1.3, permanent: true }
+  { id: "O3", type: "building", x: 4.8, z: -4.7, radius: 1.3, permanent: true },
+  { id: "O4", type: "fountain", x: 3.2, z: 6.4, radius: 1.05, permanent: true }
 ];
 
 const START_PEDESTRIANS = [
@@ -251,7 +252,7 @@ export function createInitialState() {
     obstacles: START_OBSTACLES.map((obstacle) => ({ ...obstacle })),
     occupancy: Object.fromEntries(DESTINATIONS.map((destination) => [destination.id, 0])),
     nextPedestrian: 1,
-    nextObstacle: 4,
+    nextObstacle: 5,
     playing: true,
     speedMultiplier: 1,
     time: 0
